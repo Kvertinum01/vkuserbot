@@ -1,5 +1,4 @@
 from .user import User
-from .tools import post
 from typing import Optional
 import aiofiles
 
@@ -12,7 +11,7 @@ class MesPhotoUploader:
         server = await self._bot.method("photos.getMessagesUploadServer")
         server_url = server["upload_url"]
         async with aiofiles.open(filename, mode="rb") as file:
-            file = await post(server_url, {"file": file})
+            file = await self._bot.post(server_url, {"file": file})
         doc = await self._bot.method(
             "photos.save",
             {
@@ -23,7 +22,7 @@ class MesPhotoUploader:
             },
         )
         doc = doc[0]
-        return "photo{}_{}".format(doc["owner_id"], doc["id"])
+        return f"photo{doc['owner_id']}_{doc['id']}"
 
 
 class MesDocUploader:
@@ -47,10 +46,10 @@ class MesDocUploader:
         )
         server_url = server["upload_url"]
         async with aiofiles.open(filename, mode="rb") as doc_file:
-            file = await post(server_url, {"file": doc_file})
+            file = await self._bot.post(server_url, {"file": doc_file})
         file = file["file"]
         doc = await self._bot.method(
             "docs.save", {"file": file, "title": docname}
         )
         doc = doc[doctype]
-        return "doc{}_{}".format(doc["owner_id"], doc["id"])
+        return f"doc{doc['owner_id']}_{doc['id']}"

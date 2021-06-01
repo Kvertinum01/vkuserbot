@@ -16,7 +16,7 @@ def get_datafile() -> Dict[str, str]:
     return res_data
 
 
-def save_datafile(datafile: Dict[str, Union[str,int]]) -> None:
+def save_datafile(datafile: Dict[str, Union[str, int]]) -> None:
     res_to_save = ""
     for name, value in datafile.items():
         res_to_save += "{}={}\n".format(name, str(value))

@@ -1,4 +1,3 @@
-from .tools import post
 from random import randint
 from traceback import print_exc
 from typing import (
@@ -10,10 +9,11 @@ from typing import (
     Callable
 )
 import asyncio
+import aiohttp
 
 
 class VkApiError(Exception):
-    def __init__(self, code: int, text_error: str) -> None:
+    def __init__(self, code: int, text_error: dict) -> None:
         self.code = code
         self.text_error = str(text_error)
 
@@ -30,10 +30,13 @@ class User:
         self.token = user_token
         self.event = None
         self.last_message = None
+        self.session: Optional[aiohttp.ClientSession] = None
         self._base_params: Dict[str, str] = {
             "access_token": self.token,
             "v": "5.131"
         }
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self.__init_settings())
 
     async def method(
         self,
@@ -41,7 +44,7 @@ class User:
         params: Dict[str, Union[str, int]] = {}
     ) -> Optional[Dict[str, Any]]:
         params.update(self._base_params)
-        answer = await post(self.server + "/method/" + name, params)
+        answer = await self.post(self.server + "/method/" + name, params)
         if "error" not in answer:
             return answer["response"]
         answer = answer["error"]
@@ -59,7 +62,9 @@ class User:
         attachment: Optional[str] = None,
     ) -> Dict[str, Any]:
         type_to_name, type_to_value = (
-            ("user_id", user_id) if user_id is not None else ("peer_id", peer_id)
+            ("user_id", user_id)
+            if user_id is not None else
+            ("peer_id", peer_id)
         )
         return await self.method(
             "messages.send",
@@ -72,10 +77,7 @@ class User:
         )
 
     async def reply(
-        self,
-        peer_id: int,
-        mes_id: int,
-        message: str,
+        self, peer_id: int, mes_id: int, message: str,
         attachment: Optional[str] = None
     ) -> Dict[str, Any]:
         return await self.method(
@@ -121,6 +123,18 @@ class User:
             return wrapper
         return get_func
 
+    async def post(self, link: str, data: Dict[str, Union[str, int]]) -> dict:
+        async with self.session.post(link, data=data) as response:
+            return await response.json(content_type=None)
+
+    async def __init_settings(self):
+        self.session = aiohttp.ClientSession()
+        my_info = await self.method("users.get")
+        self._longpoll = await self.method("messages.getLongPollServer")
+        self.my_id = my_info[0]["id"]
+        self._longpoll_url = "https://" + self._longpoll["server"]
+        self.ts = self._longpoll["ts"]
+
     async def __check_handle(self, handle: Dict[str, Any]) -> None:
         mes = Message(self)
         last_text: str = self.last_message["text"]
@@ -141,15 +155,10 @@ class User:
                 await func(self._longpoll_result["updates"])
 
     async def __main_loop(self) -> None:
-        my_info = await self.method("users.get")
-        self._longpoll = await self.method("messages.getLongPollServer")
-        self.my_id = my_info[0]["id"]
-        longpoll_url = "https://" + self._longpoll["server"]
-        self.ts = self._longpoll["ts"]
         while True:
             try:
                 await self.loopfunc()
-                self._longpoll_result = await post(longpoll_url, {
+                self._longpoll_result = await self.post(self._longpoll_url, {
                     "act": "a_check",
                     "key": self._longpoll["key"],
                     "ts": self.ts,
@@ -177,11 +186,10 @@ class User:
                 print_exc()
 
     def run(self) -> None:
-        asyncio.run(self.__main_loop())
+        self.loop.run_until_complete(self.__main_loop())
 
     async def loopfunc(self) -> None:
         pass
 
 
-from .message import _Message
-Message = _Message
+from .message import Message

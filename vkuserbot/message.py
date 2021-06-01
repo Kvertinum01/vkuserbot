@@ -5,7 +5,7 @@ import aiohttp
 import aiofiles
 
 
-class _Message:
+class Message:
     def __init__(self, bot: User) -> None:
         self._bot = bot
         self.data = copy(bot.last_message)
@@ -24,8 +24,7 @@ class _Message:
         )
 
     async def reply(
-        self,
-        text: str,
+        self, text: str,
         attachment: Optional[str] = None
     ) -> Dict[str, Any]:
         return await self._bot.reply(
@@ -36,8 +35,8 @@ class _Message:
         )
 
     async def get_photo(self, file_to_save: str, img_index: int = 0) -> None:
-        img_data = self.data["attachments"]
         assert self.attachments, "В сообщении нет файлов."
+        img_data = self.data["attachments"]
         if "photo" in img_data[img_index]:
             img_link = img_data[img_index]["photo"]["sizes"][-1]["url"]
             async with aiohttp.ClientSession() as session:
