@@ -2,6 +2,7 @@ from .user import User
 from typing import Optional
 from copy import copy
 import aiohttp
+import aiofiles
 
 
 class _Message:
@@ -35,7 +36,6 @@ class _Message:
         )
 
     async def get_photo(self, file_to_save: str, img_index: int = 0) -> None:
-        import aiofiles
         img_data = self.data["attachments"]
         assert self.attachments, "В сообщении нет файлов."
         if "photo" in img_data[img_index]:
