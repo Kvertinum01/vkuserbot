@@ -57,13 +57,14 @@ class User:
         peer_id: Optional[int] = None,
         message: Optional[str] = None,
         attachment: Optional[str] = None,
-    ) -> dict:
-        type_to = "user_id" if user_id is not None else "peer_id"
-        type_to_v = user_id if user_id is not None else peer_id
+    ) -> Dict[str, Any]:
+        type_to_name, type_to_value = (
+            ("user_id", user_id) if user_id is not None else ("peer_id", peer_id)
+        )
         return await self.method(
             "messages.send",
             {
-                type_to: type_to_v,
+                type_to_name: type_to_value,
                 "random_id": randint(-555555, 555555),
                 "message": message,
                 "attachment": attachment,
@@ -76,7 +77,7 @@ class User:
         mes_id: int,
         message: str,
         attachment: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         return await self.method(
             "messages.send",
             {
@@ -88,7 +89,7 @@ class User:
             },
         )
 
-    async def get_messages(self, count: int = 10) -> list:
+    async def messages_get(self, count: int = 10) -> List[dict]:
         chats = await self.method("messages.getConversations")
         chats = chats["items"]
         chat_id = chats[0]["conversation"]["peer"]["id"]
@@ -100,7 +101,7 @@ class User:
     def handle(
         self,
         text: Optional[List[str]] = None,
-        cmd: Optional[str] = None,
+        cmd: Optional[List[str]] = None,
         event: Optional[int] = None,
         from_where: str = "*"
     ) -> Callable:
@@ -133,7 +134,7 @@ class User:
                 await func(mes)
         elif "cmd" in handle:
             cmd_args = last_text.split()
-            if cmd_args[0] == handle["cmd"]:
+            if cmd_args[0] in handle["cmd"]:
                 await func(mes, cmd_args[1:])
         elif "event" in handle:
             if handle["event"] == self.event:
@@ -163,6 +164,7 @@ class User:
                     self.event = update[0]
                     for handle in self._events_to_handle:
                         await self.__check_handle(handle)
+                        continue
                     if self.event != 4:
                         continue
                     vk_event = await self.method(

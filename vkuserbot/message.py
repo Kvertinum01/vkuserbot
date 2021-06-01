@@ -1,5 +1,5 @@
 from .user import User
-from typing import Optional
+from typing import Optional, Dict, Any
 from copy import copy
 import aiohttp
 import aiofiles
@@ -18,7 +18,7 @@ class _Message:
         self,
         text: str,
         attachment: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         return await self._bot.send(
             peer_id=self.peer_id, message=text, attachment=attachment
         )
@@ -27,7 +27,7 @@ class _Message:
         self,
         text: str,
         attachment: Optional[str] = None
-    ) -> dict:
+    ) -> Dict[str, Any]:
         return await self._bot.reply(
             peer_id=self.peer_id,
             mes_id=self.mes_id,
