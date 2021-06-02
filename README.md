@@ -27,11 +27,11 @@ if __name__ == "__main__":
  #### Больше примеров [здесь](https://github.com/Kvertinum01/vkuserbot/tree/master/docs)
 
 ## Установка
-### Windows
+### Новейшая версия
 ```shell
 pip install -U "git+https://github.com/Kvertinum01/vkuserbot#egg=vkuserbot"
 ```
-### Linux
+### Версия с PyPI
 ```shell
-pip3 install -U "git+https://github.com/Kvertinum01/vkuserbot#egg=vkuserbot"
+pip install vkuserbot
 ```

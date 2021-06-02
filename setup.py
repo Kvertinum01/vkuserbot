@@ -4,6 +4,8 @@ name = "vkuserbot"
 version = "0.0.4"
 
 setup(
+    author="Kvertinum01",
+    url="https://github.com/Kvertinum01/vkuserbot",
     name=name,
     version=version,
     packages=["vkuserbot"],
