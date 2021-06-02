@@ -7,7 +7,7 @@
 
 ## Пример использования
 ```python
-from vkuserbot.user import User
+from vkuserbot import User
 
 bot = User("Your token here")
 

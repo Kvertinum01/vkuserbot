@@ -9,11 +9,11 @@ TOKEN=YOUR_TOKEN
 
 ## main.py
 ```python
-from vkuserbot.user import User, Message
-from vkuserbot.utils import get_datafile
+from vkuserbot import User, Message, get_datafile
+import os
 
-datafile = get_datafile() #Возвращает словарь
-bot = User(datafile["TOKEN"])
+get_datafile()
+bot = User(os.environ["TOKEN"])
 
 @bot.handle(text=["hello"])
 async def sayhello(mes: Message):
