@@ -1,3 +1,4 @@
+from .waiter import Waiter
 from random import randint
 from traceback import print_exc
 from typing import (
@@ -30,7 +31,7 @@ class User:
         self.token = user_token
         self.event = None
         self.last_message = None
-        self.session: Optional[aiohttp.ClientSession] = None
+        self.waiter: Optional[Waiter] = None
         self._base_params: Dict[str, str] = {
             "access_token": self.token,
             "v": "5.131"
@@ -173,20 +174,31 @@ class User:
                     self.event = update[0]
                     for handle in self._events_to_handle:
                         await self.__check_handle(handle)
-                        continue
                     if self.event != 4:
                         continue
                     vk_event = await self.method(
                         "messages.getById", {"message_ids": update[1]}
                     )
                     self.last_message = vk_event["items"][0]
+                    from_id = self.last_message["from_id"]
+                    if (
+                        self.waiter is not None and from_id != self.my_id
+                    ):
+                        str_peer_id = str(self.last_message["peer_id"])
+                        if str_peer_id in self.waiter._in_wait_ids:
+                            func_id = self.waiter._in_wait_ids[str_peer_id]
+                            func_to_call = self.waiter._to_handle[func_id]
+                            await func_to_call(Message(self))
                     for handle in self._to_handle:
                         await self.__check_handle(handle)
             except Exception:
                 print_exc()
 
     def run(self) -> None:
-        self.loop.run_until_complete(self.__main_loop())
+        try:
+            self.loop.run_until_complete(self.__main_loop())
+        except KeyboardInterrupt:
+            pass
 
     async def loopfunc(self) -> None:
         pass
