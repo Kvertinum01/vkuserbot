@@ -13,13 +13,15 @@ class Message:
             self.__dict__[name] = value
         self.session = self._bot.session
         self.mes_id: int = self.data["id"]
-        self.attachments_in_message = False if not len(self.attachments) else True
+        self.attachments_in_message = (
+            False if not len(self.attachments) else True
+        )
 
     def init_none_vars(self) -> None:
         self.text: Optional[str] = None
         self.from_id: Optional[int] = None
         self.peer_id: Optional[int] = None
-        self.attachments: Optional[List[Dict[str,  Any]]] = None
+        self.attachments: Optional[List[Dict[str, Any]]] = None
 
     async def answer(
         self,
