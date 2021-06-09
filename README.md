@@ -31,7 +31,3 @@ if __name__ == "__main__":
 ```shell
 pip install -U "git+https://github.com/Kvertinum01/vkuserbot#egg=vkuserbot"
 ```
-### Версия с PyPI
-```shell
-pip install vkuserbot
-```
