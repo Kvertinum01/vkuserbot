@@ -20,7 +20,7 @@ class VkApiError(Exception):
 
     def __str__(self) -> str:
         return self.text_error
-
+        
 
 class User:
     def __init__(self, user_token: str) -> None:
@@ -36,8 +36,14 @@ class User:
             "access_token": self.token,
             "v": "5.131"
         }
+        self.SETTINGS = {
+            "print_full_exc": True,
+            "print_exc": False
+        }
         self.loop = asyncio.get_event_loop()
-        self.loop.run_until_complete(self.__init_settings())
+        self.loop.run_until_complete(
+            self.__init_settings()
+        )
 
     async def method(
         self,
@@ -113,7 +119,7 @@ class User:
                 return None
             to_handle_dict: Dict[str, Any] = {"func": func, "from": from_where}
             if event is not None:
-                to_handle_dict["event"] = event
+                to_handle_dict.update({"event": event})
                 self._events_to_handle.append(to_handle_dict)
                 return wrapper
             elif cmd is not None:
@@ -127,14 +133,6 @@ class User:
     async def post(self, link: str, data: Dict[str, Union[str, int]]) -> dict:
         async with self.session.post(link, data=data) as response:
             return await response.json(content_type=None)
-
-    async def __init_settings(self):
-        self.session = aiohttp.ClientSession()
-        my_info = await self.method("users.get")
-        self._longpoll = await self.method("messages.getLongPollServer")
-        self.my_id = my_info[0]["id"]
-        self._longpoll_url = "https://" + self._longpoll["server"]
-        self.ts = self._longpoll["ts"]
 
     async def __check_handle(self, handle: Dict[str, Any]) -> None:
         mes = Message(self)
@@ -154,6 +152,14 @@ class User:
         elif "event" in handle:
             if handle["event"] == self.event:
                 await func(self._longpoll_result["updates"])
+
+    async def __init_settings(self):
+        self.session = aiohttp.ClientSession()
+        my_info = await self.method("users.get")
+        self._longpoll = await self.method("messages.getLongPollServer")
+        self.my_id = my_info[0]["id"]
+        self._longpoll_url = "https://" + self._longpoll["server"]
+        self.ts = self._longpoll["ts"]
 
     async def __main_loop(self) -> None:
         while True:
@@ -191,14 +197,24 @@ class User:
                             await func_to_call(Message(self))
                     for handle in self._to_handle:
                         await self.__check_handle(handle)
-            except Exception:
-                print_exc()
+            except KeyboardInterrupt:
+                break
+            except Exception as error:
+                if self.SETTINGS["print_full_exc"]:
+                    print_exc()
+                if self.SETTINGS["print_exc"]:
+                    print(error)
 
     def run(self) -> None:
         try:
-            self.loop.run_until_complete(self.__main_loop())
+            self.loop.run_until_complete(
+                self.__main_loop()
+            )
         except KeyboardInterrupt:
             pass
+
+    async def async_run(self) -> None:
+        await self.__main_loop()
 
     async def loopfunc(self) -> None:
         pass

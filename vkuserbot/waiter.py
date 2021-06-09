@@ -14,8 +14,8 @@ class Waiter:
             return wrapper
         return get_func
 
-    def add(self, peer_id: int, func_id: int):
+    def add(self, peer_id: int, func_id: int) -> None:
         self._in_wait_ids[str(peer_id)] = str(func_id)
 
-    def exit_waiter(self, peer_id: int):
+    def exit_waiter(self, peer_id: int) -> None:
         del self._in_wait_ids[str(peer_id)]
