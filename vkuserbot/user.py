@@ -20,7 +20,7 @@ class VkApiError(Exception):
 
     def __str__(self) -> str:
         return self.text_error
-   
+
 
 class User:
     def __init__(self, user_token: str) -> None:

@@ -6,7 +6,7 @@ import aiofiles
 
 class Message:
     def __init__(self, bot: User) -> None:
-        self.init_none_vars()
+        self.__init_none_vars()
         self._bot = bot
         self.data: dict = copy(bot.last_message)
         for name, value in self.data.items():
@@ -17,7 +17,7 @@ class Message:
             False if not len(self.attachments) else True
         )
 
-    def init_none_vars(self) -> None:
+    def __init_none_vars(self) -> None:
         self.text: Optional[str] = None
         self.from_id: Optional[int] = None
         self.peer_id: Optional[int] = None
