@@ -20,19 +20,22 @@ async def _post(link: str, data: dict) -> dict:
             return await response.json(content_type=None)
 
 
-async def gen_token_async(login: str, password: str) -> str:
-    token_data = await _post("https://oauth.vk.com/token", {
-        "grant_type": "password",
-        "client_id": "2274003",
-        "client_secret": "hHbZxrka2uZ6jB1inYsH",
-        "username": login,
-        "password": password
-    })
+async def async_gen_token(login: str, password: str) -> str:
+    async with aiohttp.ClientSession() as session:
+        async with session.post("https://oauth.vk.com/token", data={
+            "grant_type": "password",
+            "client_id": "2274003",
+            "client_secret": "hHbZxrka2uZ6jB1inYsH",
+            "username": login,
+            "password": password
+        }) as response:
+            token_data = await response.json()
+    assert "access_token" in token_data, token_data["error_description"]
     return token_data["access_token"]
 
 
 def gen_token(login: str, password: str) -> str:
     loop = asyncio.get_event_loop()
     return loop.run_until_complete(
-        gen_token_async(login, password)
+        async_gen_token(login, password)
     )

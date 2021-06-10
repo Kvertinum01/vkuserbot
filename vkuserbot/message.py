@@ -10,6 +10,8 @@ class Message:
         self._bot = bot
         self.data: dict = copy(bot.last_message)
         for name, value in self.data.items():
+            if name == "id":
+                continue
             self.__dict__[name] = value
         self.session = self._bot.session
         self.mes_id: int = self.data["id"]
@@ -17,30 +19,48 @@ class Message:
             False if not len(self.attachments) else True
         )
 
+    def __repr__(self) -> str:
+        res_class_info = "Message("
+        class_vars = []
+        for name, value in self.__dict__.items():
+            if name[0] == "_":
+                continue
+            class_vars.append(name + "=" + str(value))
+        str_class_vars = ", ".join(class_vars)
+        res_class_info += str_class_vars + ")"
+        return res_class_info
+
     def __init_none_vars(self) -> None:
         self.text: Optional[str] = None
         self.from_id: Optional[int] = None
         self.peer_id: Optional[int] = None
+        self.conversation_message_id: Optional[int] = None
         self.attachments: Optional[List[Dict[str, Any]]] = None
 
     async def answer(
         self,
         text: str,
-        attachment: Optional[str] = None
+        attachment: Optional[str] = None,
+        expire_ttl: Optional[int] = None
     ) -> Dict[str, Any]:
         return await self._bot.send(
-            peer_id=self.peer_id, message=text, attachment=attachment
+            peer_id=self.peer_id,
+            message=text,
+            attachment=attachment,
+            expire_ttl=expire_ttl
         )
 
     async def reply(
         self, text: str,
-        attachment: Optional[str] = None
+        attachment: Optional[str] = None,
+        expire_ttl: Optional[int] = None
     ) -> Dict[str, Any]:
         return await self._bot.reply(
             peer_id=self.peer_id,
             mes_id=self.mes_id,
             message=text,
-            attachment=attachment
+            attachment=attachment,
+            expire_ttl=expire_ttl
         )
 
     async def get_photo(self, file_to_save: str, img_index: int = 0) -> None:

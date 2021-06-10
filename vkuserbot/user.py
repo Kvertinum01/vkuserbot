@@ -45,6 +45,17 @@ class User:
             self.__init_settings()
         )
 
+    def __repr__(self) -> str:
+        res_class_info = "User("
+        class_vars = []
+        for name, value in self.__dict__.items():
+            if name[0] == "_":
+                continue
+            class_vars.append(name + "=" + str(value))
+        str_class_vars = ", ".join(class_vars)
+        res_class_info += str_class_vars + ")"
+        return res_class_info
+
     async def method(
         self,
         name: str,
@@ -67,35 +78,42 @@ class User:
         peer_id: Optional[int] = None,
         message: Optional[str] = None,
         attachment: Optional[str] = None,
+        expire_ttl: Optional[int] = None
     ) -> Dict[str, Any]:
         type_to_name, type_to_value = (
             ("user_id", user_id)
             if user_id is not None else
             ("peer_id", peer_id)
         )
+        params = {
+            type_to_name: type_to_value,
+            "random_id": randint(-555555, 555555),
+            "message": message,
+            "attachment": attachment,
+            "expire_ttl": None
+        }
+        if expire_ttl is not None:
+            params["expire_ttl"] = expire_ttl
         return await self.method(
-            "messages.send",
-            {
-                type_to_name: type_to_value,
-                "random_id": randint(-555555, 555555),
-                "message": message,
-                "attachment": attachment,
-            },
+            "messages.send", params
         )
 
     async def reply(
         self, peer_id: int, mes_id: int, message: str,
-        attachment: Optional[str] = None
+        attachment: Optional[str] = None,
+        expire_ttl: Optional[int] = None
     ) -> Dict[str, Any]:
+        params = {
+            "peer_id": peer_id,
+            "reply_to": mes_id,
+            "random_id": randint(-555555, 555555),
+            "message": message,
+            "attachment": attachment,
+        }
+        if expire_ttl is not None:
+            params["expire_ttl"] = expire_ttl
         return await self.method(
-            "messages.send",
-            {
-                "peer_id": peer_id,
-                "reply_to": mes_id,
-                "random_id": randint(-555555, 555555),
-                "message": message,
-                "attachment": attachment,
-            },
+            "messages.send", params
         )
 
     async def messages_get(self, count: int = 10) -> List[dict]:
@@ -146,9 +164,9 @@ class User:
             if text is None or last_text in text:
                 await func(mes)
         elif "cmd" in handle:
-            cmd_args = last_text.split()
+            cmd_args = last_text.split(" ")
             if cmd_args[0] in handle["cmd"]:
-                await func(mes, cmd_args[1:])
+                await func(mes, " ".join(cmd_args[1:]))
         elif "event" in handle:
             if handle["event"] == self.event:
                 await func(self._longpoll_result["updates"])
@@ -164,7 +182,7 @@ class User:
     async def __main_loop(self) -> None:
         while True:
             try:
-                await self.loopfunc()
+                await self.loop_func()
                 self._longpoll_result = await self.post(self._longpoll_url, {
                     "act": "a_check",
                     "key": self._longpoll["key"],
@@ -216,7 +234,7 @@ class User:
     async def async_run(self) -> None:
         await self.__main_loop()
 
-    async def loopfunc(self) -> None:
+    async def loop_func(self) -> None:
         pass
 
 
