@@ -14,12 +14,6 @@ def get_datafile(file_name: str = "datafile") -> None:
         os.environ[name] = value
 
 
-async def _post(link: str, data: dict) -> dict:
-    async with aiohttp.ClientSession() as session:
-        async with session.post(link, data=data) as response:
-            return await response.json(content_type=None)
-
-
 async def async_gen_token(login: str, password: str) -> str:
     async with aiohttp.ClientSession() as session:
         async with session.post("https://oauth.vk.com/token", data={

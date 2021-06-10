@@ -89,8 +89,7 @@ class User:
             type_to_name: type_to_value,
             "random_id": randint(-555555, 555555),
             "message": message,
-            "attachment": attachment,
-            "expire_ttl": None
+            "attachment": attachment
         }
         if expire_ttl is not None:
             params["expire_ttl"] = expire_ttl
