@@ -23,7 +23,7 @@ async def async_gen_token(login: str, password: str) -> str:
             "username": login,
             "password": password
         }) as response:
-            token_data = await response.json()
+            token_data = await response.json(content_type=None)
     assert "access_token" in token_data, token_data["error_description"]
     return token_data["access_token"]
 

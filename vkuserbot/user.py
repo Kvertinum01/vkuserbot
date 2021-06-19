@@ -1,4 +1,5 @@
 from .waiter import Waiter
+from .tools import VkuserbotClass
 from random import randint
 from traceback import print_exc
 from typing import (
@@ -9,6 +10,7 @@ from typing import (
     Union,
     Callable
 )
+import sys
 import asyncio
 import aiohttp
 
@@ -22,8 +24,9 @@ class VkApiError(Exception):
         return self.text_error
 
 
-class User:
+class User(VkuserbotClass):
     def __init__(self, user_token: str) -> None:
+        self.stop = False
         self._to_handle: List[dict] = []
         self._events_to_handle: List[dict] = []
         self.handle_errors: Dict[str, Callable] = {}
@@ -45,22 +48,11 @@ class User:
             self.__init_settings()
         )
 
-    def __repr__(self) -> str:
-        res_class_info = "User("
-        class_vars = []
-        for name, value in self.__dict__.items():
-            if name[0] == "_":
-                continue
-            class_vars.append(name + "=" + str(value))
-        str_class_vars = ", ".join(class_vars)
-        res_class_info += str_class_vars + ")"
-        return res_class_info
-
     async def method(
         self,
         name: str,
         params: Dict[str, Union[str, int]] = {}
-    ) -> Optional[Dict[str, Any]]:
+    ) -> Dict[str, Any]:
         params.update(self._base_params)
         answer = await self.post(self.server + "/method/" + name, params)
         if "error" not in answer:
@@ -85,14 +77,17 @@ class User:
             if user_id is not None else
             ("peer_id", peer_id)
         )
-        params = {
+        plan_params = {
             type_to_name: type_to_value,
             "random_id": randint(-555555, 555555),
             "message": message,
-            "attachment": attachment
+            "attachment": attachment,
+            "expire_ttl": expire_ttl
         }
-        if expire_ttl is not None:
-            params["expire_ttl"] = expire_ttl
+        params = {}
+        params.update(
+            (k, v) for k, v in plan_params.items() if v is not None
+        )
         return await self.method(
             "messages.send", params
         )
@@ -102,15 +97,18 @@ class User:
         attachment: Optional[str] = None,
         expire_ttl: Optional[int] = None
     ) -> Dict[str, Any]:
-        params = {
+        plan_params = {
             "peer_id": peer_id,
             "reply_to": mes_id,
             "random_id": randint(-555555, 555555),
             "message": message,
             "attachment": attachment,
+            "expire_ttl": expire_ttl
         }
-        if expire_ttl is not None:
-            params["expire_ttl"] = expire_ttl
+        params = {}
+        params.update(
+            (k, v) for k, v in plan_params.items() if v is not None
+        )
         return await self.method(
             "messages.send", params
         )
@@ -147,7 +145,7 @@ class User:
             return wrapper
         return get_func
 
-    async def post(self, link: str, data: Dict[str, Union[str, int]]) -> dict:
+    async def post(self, link: str, data: Dict[str, Any]) -> dict:
         async with self.session.post(link, data=data) as response:
             return await response.json(content_type=None)
 
@@ -182,6 +180,8 @@ class User:
         while True:
             try:
                 await self.loop_func()
+                if self.stop:
+                    continue
                 self._longpoll_result = await self.post(self._longpoll_url, {
                     "act": "a_check",
                     "key": self._longpoll["key"],
