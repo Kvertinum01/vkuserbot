@@ -1,3 +1,4 @@
+from .longpoll import Longpoll
 from .waiter import Waiter
 from .tools import VkuserbotClass
 from random import randint
@@ -10,7 +11,6 @@ from typing import (
     Union,
     Callable
 )
-import sys
 import asyncio
 import aiohttp
 
@@ -47,6 +47,7 @@ class User(VkuserbotClass):
         self.loop.run_until_complete(
             self.__init_settings()
         )
+        self.longpoll = Longpoll(self)
 
     async def method(
         self,
@@ -149,7 +150,7 @@ class User(VkuserbotClass):
         async with self.session.post(link, data=data) as response:
             return await response.json(content_type=None)
 
-    async def __check_handle(self, handle: Dict[str, Any]) -> None:
+    async def _check_handle(self, handle: Dict[str, Any]) -> None:
         mes = Message(self)
         last_text: str = self.last_message["text"]
         func = handle["func"]
@@ -165,16 +166,13 @@ class User(VkuserbotClass):
             if cmd_args[0] in handle["cmd"]:
                 await func(mes, " ".join(cmd_args[1:]))
         elif "event" in handle:
-            if handle["event"] == self.event:
-                await func(self._longpoll_result["updates"])
+            if handle["event"] == self.longpoll.event:
+                await func(self.longpoll._longpoll_result["updates"])
 
     async def __init_settings(self):
         self.session = aiohttp.ClientSession()
         my_info = await self.method("users.get")
-        self._longpoll = await self.method("messages.getLongPollServer")
         self.my_id = my_info[0]["id"]
-        self._longpoll_url = "https://" + self._longpoll["server"]
-        self.ts = self._longpoll["ts"]
 
     async def __main_loop(self) -> None:
         while True:
@@ -182,27 +180,8 @@ class User(VkuserbotClass):
                 await self.loop_func()
                 if self.stop:
                     continue
-                self._longpoll_result = await self.post(self._longpoll_url, {
-                    "act": "a_check",
-                    "key": self._longpoll["key"],
-                    "ts": self.ts,
-                    "wait": 1,
-                    "mode": 2,
-                    "version": 3
-                })
-                self.ts = self._longpoll_result["ts"]
-                if "updates" not in self._longpoll_result:
-                    continue
-                for update in self._longpoll_result["updates"]:
-                    self.event = update[0]
-                    for handle in self._events_to_handle:
-                        await self.__check_handle(handle)
-                    if self.event != 4:
-                        continue
-                    vk_event = await self.method(
-                        "messages.getById", {"message_ids": update[1]}
-                    )
-                    self.last_message = vk_event["items"][0]
+                async for message in self.longpoll.listener():
+                    self.last_message = message
                     from_id = self.last_message["from_id"]
                     if (
                         self.waiter is not None and from_id != self.my_id
@@ -213,7 +192,7 @@ class User(VkuserbotClass):
                             func_to_call = self.waiter._to_handle[func_id]
                             await func_to_call(Message(self))
                     for handle in self._to_handle:
-                        await self.__check_handle(handle)
+                        await self._check_handle(handle)
             except KeyboardInterrupt:
                 break
             except Exception as error:
@@ -235,6 +214,5 @@ class User(VkuserbotClass):
 
     async def loop_func(self) -> None:
         pass
-
 
 from .message import Message
