@@ -1,19 +1,21 @@
 from .tools import VkuserbotClass
-from .user import *
+from typing import Dict, Any
+import vkuserbot.user as user
+
 
 class Longpoll(VkuserbotClass):
-    def __init__(self, bot: "User") -> None:
+    def __init__(self, bot: "user.User") -> None:
         self._bot = bot
         bot.loop.run_until_complete(
             self._init_longpoll()
         )
 
-    async def _init_longpoll(self):
+    async def _init_longpoll(self) -> None:
         self._longpoll = await self._bot.method("messages.getLongPollServer")
         self._longpoll_url = "https://" + self._longpoll["server"]
         self.ts = self._longpoll["ts"]
 
-    async def listener(self):
+    async def listener(self) -> Dict[str, Any]:
         while True:
             self._longpoll_result = await self._bot.post(self._longpoll_url, {
                 "act": "a_check",

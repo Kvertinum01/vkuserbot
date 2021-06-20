@@ -1,5 +1,6 @@
 from .tools import VkuserbotClass
 
+
 class Events(VkuserbotClass):
     NewMessage = 4
     EditMessage = 5

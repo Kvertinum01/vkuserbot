@@ -1,12 +1,12 @@
-from .user import User
 from .tools import VkuserbotClass
 from typing import Optional, Dict, Any, List
 from copy import copy
+import vkuserbot.user as user
 import aiofiles
 
 
 class Message(VkuserbotClass):
-    def __init__(self, bot: User) -> None:
+    def __init__(self, bot: "user.User") -> None:
         self.__init_none_vars()
         self._bot = bot
         self.data: dict = copy(bot.last_message)
@@ -19,13 +19,19 @@ class Message(VkuserbotClass):
         self.attachments_in_message = (
             False if not len(self.attachments) else True
         )
+        plan_self = bot.middleware.after(self)
+        self = (
+            plan_self if plan_self is not None else self
+        )
 
     def __init_none_vars(self) -> None:
         self.text: Optional[str] = None
         self.from_id: Optional[int] = None
         self.peer_id: Optional[int] = None
         self.conversation_message_id: Optional[int] = None
-        self.attachments: Optional[List[Dict[str, Any]]] = None
+        self.attachments: Optional[
+            List[Dict[str, Any]]
+        ] = None
 
     async def answer(
         self,

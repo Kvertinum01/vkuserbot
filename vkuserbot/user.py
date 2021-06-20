@@ -1,27 +1,24 @@
 from .longpoll import Longpoll
 from .waiter import Waiter
-from .tools import VkuserbotClass
+from .tools import (
+    VkuserbotClass,
+    VkApiError,
+    EmptyMiddleware
+)
+from .message import Message
 from random import randint
 from traceback import print_exc
 from typing import (
     Any,
     List,
     Dict,
+    Type,
     Optional,
     Union,
     Callable
 )
 import asyncio
 import aiohttp
-
-
-class VkApiError(Exception):
-    def __init__(self, code: int, text_error: dict) -> None:
-        self.code = code
-        self.text_error = str(text_error)
-
-    def __str__(self) -> str:
-        return self.text_error
 
 
 class User(VkuserbotClass):
@@ -48,6 +45,7 @@ class User(VkuserbotClass):
             self.__init_settings()
         )
         self.longpoll = Longpoll(self)
+        self.middleware = EmptyMiddleware
 
     async def method(
         self,
@@ -164,10 +162,14 @@ class User(VkuserbotClass):
         elif "cmd" in handle:
             cmd_args = last_text.split(" ")
             if cmd_args[0] in handle["cmd"]:
-                await func(mes, " ".join(cmd_args[1:]))
+                await func(
+                    mes, tuple(cmd_args[1:])
+                )
         elif "event" in handle:
             if handle["event"] == self.longpoll.event:
-                await func(self.longpoll._longpoll_result["updates"])
+                await func(
+                    self.longpoll._longpoll_result["updates"]
+                )
 
     async def __init_settings(self):
         self.session = aiohttp.ClientSession()
@@ -181,12 +183,13 @@ class User(VkuserbotClass):
                 if self.stop:
                     continue
                 async for message in self.longpoll.listener():
+                    message = await self.middleware.before(message)
                     self.last_message = message
-                    from_id = self.last_message["from_id"]
+                    from_id = message["from_id"]
                     if (
                         self.waiter is not None and from_id != self.my_id
                     ):
-                        str_peer_id = str(self.last_message["peer_id"])
+                        str_peer_id = str(message["peer_id"])
                         if str_peer_id in self.waiter._in_wait_ids:
                             func_id = self.waiter._in_wait_ids[str_peer_id]
                             func_to_call = self.waiter._to_handle[func_id]
@@ -214,5 +217,3 @@ class User(VkuserbotClass):
 
     async def loop_func(self) -> None:
         pass
-
-from .message import Message
