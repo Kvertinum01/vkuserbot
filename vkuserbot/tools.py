@@ -1,5 +1,4 @@
 from typing import Dict, Any
-from vkuserbot.message import Message
 
 
 class VkuserbotClass:
