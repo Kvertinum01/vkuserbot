@@ -17,6 +17,9 @@ class MyMiddleware(EmptyMiddleware):
 
 ...
 
+#bot: User
+bot.middleware = MyMiddleware
+
 #Теперь при получении любого сообщения к тексту всегда будет применяться .lower()
 
 ```
