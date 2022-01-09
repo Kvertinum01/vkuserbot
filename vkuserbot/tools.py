@@ -1,6 +1,3 @@
-from typing import Dict, Any
-
-
 class VkuserbotClass:
     def __repr__(self) -> str:
         res_class_info = self.__class__.__name__ + "("
@@ -21,15 +18,3 @@ class VkApiError(Exception):
 
     def __str__(self) -> str:
         return self.text_error
-
-
-class EmptyMiddleware:
-    from .message import Message
-
-    async def before(
-        message: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        return message
-
-    def after(message: Message) -> Message:
-        return message

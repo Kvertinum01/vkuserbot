@@ -1,9 +1,9 @@
 from .longpoll import Longpoll
 from .waiter import Waiter
+from .middleware import EmptyMiddleware
 from .tools import (
     VkuserbotClass,
-    VkApiError,
-    EmptyMiddleware
+    VkApiError
 )
 from .message import Message
 from random import randint

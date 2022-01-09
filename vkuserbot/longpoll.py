@@ -1,6 +1,47 @@
 from .tools import VkuserbotClass
-from typing import Dict, Any
+from typing import Dict, Any, Union
 import vkuserbot.user as user
+import json
+
+UPDATE_T = Dict[Union[int, str], Union[int, str, dict]]
+
+def parse_longpoll(update: UPDATE_T, my_id: int):
+    message_info = {
+        "message_id": update[1],
+        "peer_id": update[3],
+        "date": update[4],
+        "text": update[5],
+        "attachments": [],
+        "from_id": my_id
+    }
+    for inf in update:
+        if not isinstance(inf, dict):
+            continue
+        for name, value in inf.items():
+            if isinstance(value, dict):
+                message_info.update(
+                    {name: value}
+                )
+                continue
+            if name == "reply":
+                value: Dict[str, int] = json.loads(value)
+                message_info.update(
+                    {"conversation_message_id": value["conversation_message_id"]}
+                )
+                continue
+            if name == "attachments":
+                value: Dict[str, int] = json.loads(value)
+                message_info.update(
+                    {"attachments": value}
+                )
+                continue
+            if name == "from":
+                message_info["from_id"] = value
+                continue
+            message_info.update(
+                {name: value}
+            )
+    return message_info
 
 
 class Longpoll(VkuserbotClass):
@@ -22,7 +63,7 @@ class Longpoll(VkuserbotClass):
                 "key": self._longpoll["key"],
                 "ts": self.ts,
                 "wait": 1,
-                "mode": 2,
+                "mode": 234,
                 "version": 3
             })
             self.ts = self._longpoll_result["ts"]
@@ -34,7 +75,5 @@ class Longpoll(VkuserbotClass):
                     await self._bot._check_handle(handle)
                 if self.event != 4:
                     continue
-                vk_event = await self._bot.method(
-                    "messages.getById", {"message_ids": update[1]}
-                )
-                yield vk_event["items"][0]
+                message = parse_longpoll(update, self._bot.my_id)
+                yield message
