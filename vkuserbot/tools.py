@@ -8,7 +8,7 @@ class VkuserbotClass:
             class_vars.append(name + "=" + str(value))
         str_class_vars = ", ".join(class_vars)
         res_class_info += str_class_vars + ")"
-        return res_class_info
+        return "<" + res_class_info + ">"
 
 
 class VkApiError(Exception):

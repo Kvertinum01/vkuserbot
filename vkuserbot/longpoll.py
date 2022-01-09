@@ -3,9 +3,12 @@ from typing import Dict, Any, Union
 import vkuserbot.user as user
 import json
 
-UPDATE_T = Dict[Union[int, str], Union[int, str, dict]]
 
-def parse_longpoll(update: UPDATE_T, my_id: int):
+UPDATE_T = Dict[Union[int, str], Union[int, str, dict]]
+RET_T = Dict[str, Union[str, int, dict]]
+
+
+def parse_longpoll(update: UPDATE_T, my_id: int) -> RET_T:
     message_info = {
         "message_id": update[1],
         "peer_id": update[3],
@@ -18,11 +21,6 @@ def parse_longpoll(update: UPDATE_T, my_id: int):
         if not isinstance(inf, dict):
             continue
         for name, value in inf.items():
-            if isinstance(value, dict):
-                message_info.update(
-                    {name: value}
-                )
-                continue
             if name == "reply":
                 value: Dict[str, int] = json.loads(value)
                 message_info.update(
@@ -62,7 +60,7 @@ class Longpoll(VkuserbotClass):
                 "act": "a_check",
                 "key": self._longpoll["key"],
                 "ts": self.ts,
-                "wait": 1,
+                "wait": 15,
                 "mode": 234,
                 "version": 3
             })
@@ -71,8 +69,8 @@ class Longpoll(VkuserbotClass):
                 continue
             for update in self._longpoll_result["updates"]:
                 self.event = update[0]
-                for handle in self._bot._events_to_handle:
-                    await self._bot._check_handle(handle)
+                for handle in self._bot.router._events_to_handle:
+                    await self._bot.router._check_handle(handle)
                 if self.event != 4:
                     continue
                 message = parse_longpoll(update, self._bot.my_id)

@@ -5,6 +5,7 @@ from .tools import (
     VkuserbotClass,
     VkApiError
 )
+from .router import Router
 from .message import Message
 from random import randint
 from traceback import print_exc
@@ -21,30 +22,42 @@ import aiohttp
 
 
 class User(VkuserbotClass):
-    def __init__(self, user_token: str) -> None:
+    def __init__(
+        self,
+        user_token: str,
+        version: Optional[str] = None,
+        server: Optional[str] = None,
+        waiter: Optional[Waiter] = None,
+        middleware: EmptyMiddleware = None
+    ) -> None:
+        # Base variables
         self.stop = False
-        self._to_handle: List[dict] = []
-        self._events_to_handle: List[dict] = []
         self.handle_errors: Dict[str, Callable] = {}
-        self.server = "https://api.vk.com"
-        self.token = user_token
+        self.server = server or "https://api.vk.com"
         self.event = None
         self.last_message = None
-        self.waiter: Optional[Waiter] = None
+
+        # Settings
         self._base_params: Dict[str, str] = {
-            "access_token": self.token,
-            "v": "5.131"
+            "access_token": user_token,
+            "v": version or "5.131"
         }
         self.SETTINGS = {
             "print_full_exc": True,
             "print_exc": False
         }
+
+        # Tools
+        self.waiter = waiter
+        self.longpoll = Longpoll(self)
+        self.router = Router(self)
+        self.middleware = middleware or EmptyMiddleware
+
+        # Init loop and settings
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(
             self.__init_settings()
         )
-        self.longpoll = Longpoll(self)
-        self.middleware = EmptyMiddleware
 
     async def method(
         self,
@@ -130,45 +143,15 @@ class User(VkuserbotClass):
         def get_func(func: Callable) -> Callable:
             async def wrapper() -> None:
                 return None
-            to_handle_dict: Dict[str, Any] = {"func": func, "from": from_where}
-            if event is not None:
-                to_handle_dict.update({"event": event})
-                self._events_to_handle.append(to_handle_dict)
-                return wrapper
-            elif cmd is not None:
-                to_handle_dict["cmd"] = cmd
-            else:
-                to_handle_dict["text"] = text
-            self._to_handle.append(to_handle_dict)
+            self.router._new_handle(
+                func, from_where, event, cmd, text
+            )
             return wrapper
         return get_func
 
     async def post(self, link: str, data: Dict[str, Any]) -> dict:
         async with self.session.post(link, data=data) as response:
             return await response.json(content_type=None)
-
-    async def _check_handle(self, handle: Dict[str, Any]) -> None:
-        mes = Message(self)
-        last_text: str = self.last_message["text"]
-        func = handle["func"]
-        if handle["from"] != "*":
-            if handle["from"] != mes.from_where:
-                return
-        if "text" in handle:
-            text = handle["text"]
-            if text is None or last_text in text:
-                await func(mes)
-        elif "cmd" in handle:
-            cmd_args = last_text.split(" ")
-            if cmd_args[0] in handle["cmd"]:
-                await func(
-                    mes, tuple(cmd_args[1:])
-                )
-        elif "event" in handle:
-            if handle["event"] == self.longpoll.event:
-                await func(
-                    self.longpoll._longpoll_result["updates"]
-                )
 
     async def __init_settings(self):
         self.session = aiohttp.ClientSession()
@@ -193,8 +176,8 @@ class User(VkuserbotClass):
                             func_id = self.waiter._in_wait_ids[str_peer_id]
                             func_to_call = self.waiter._to_handle[func_id]
                             await func_to_call(Message(self))
-                    for handle in self._to_handle:
-                        await self._check_handle(handle)
+                    for handle in self.router._to_handle:
+                        await self.router._check_handle(handle)
             except KeyboardInterrupt:
                 break
             except Exception as error:
@@ -204,15 +187,13 @@ class User(VkuserbotClass):
                     print(error)
 
     def run(self) -> None:
-        try:
-            self.loop.run_until_complete(
-                self.__main_loop()
-            )
-        except KeyboardInterrupt:
-            pass
+        self.loop.run_until_complete(
+            self.async_run()
+        )
 
     async def async_run(self) -> None:
         await self.__main_loop()
+        await self.session.close()
 
     async def loop_func(self) -> None:
         pass
