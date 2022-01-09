@@ -3,7 +3,7 @@ from setuptools import setup
 with open("README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
-version = "0.2.0"
+version = "1.0"
 
 setup(
     name="vkuserbot",
@@ -19,7 +19,7 @@ setup(
         "aiofiles"
     ],
     classifiers=[
-		"Programming Language :: Python :: 3.8",
+		"Programming Language :: Python :: 3.7",
 		"License :: OSI Approved :: MIT License",
 		"Operating System :: OS Independent",
 	],

@@ -1,5 +1,5 @@
 <h1 align="center">
-  vkuserbot (0.x)
+  vkuserbot (1.x)
 </h1>
 <p align="center">
   <img src="https://img.shields.io/badge/made%20by-Kvertinum01-green">
