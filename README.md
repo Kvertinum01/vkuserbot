@@ -24,7 +24,7 @@ if __name__ == "__main__":
     user.run()
 ```
 
- #### Больше примеров [здесь](https://github.com/Kvertinum01/vkuserbot/tree/master/exmaples)
+ #### Больше примеров [здесь](https://github.com/Kvertinum01/vkuserbot/tree/master/examples)
 
 ## Установка
 ### Новейшая версия
