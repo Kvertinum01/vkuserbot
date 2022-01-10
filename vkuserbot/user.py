@@ -47,17 +47,17 @@ class User(VkuserbotClass):
             "print_exc": False
         }
 
-        # Tools
-        self.waiter = waiter
-        self.longpoll = Longpoll(self)
-        self.router = Router(self)
-        self.middleware = middleware or EmptyMiddleware
-
         # Init loop and settings
         self.loop = asyncio.get_event_loop()
         self.loop.run_until_complete(
             self.__init_settings()
         )
+
+        # Tools
+        self.waiter = waiter
+        self.longpoll = Longpoll(self)
+        self.router = Router(self)
+        self.middleware = middleware or EmptyMiddleware
 
     async def method(
         self,
