@@ -26,19 +26,17 @@ def parse_longpoll(update: UPDATE_T, my_id: int) -> RET_T:
                 message_info.update(
                     {"conversation_message_id": value["conversation_message_id"]}
                 )
-                continue
-            if name == "attachments":
+            elif name == "attachments":
                 value: Dict[str, int] = json.loads(value)
                 message_info.update(
                     {"attachments": value}
                 )
-                continue
-            if name == "from":
+            elif name == "from":
                 message_info["from_id"] = value
-                continue
-            message_info.update(
-                {name: value}
-            )
+            else:
+                message_info.update(
+                    {name: value}
+                )
     return message_info
 
 
